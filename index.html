@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Crickverse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="team.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     INTRO ANIMATION SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="introScreen">
+  <div id="intro-scene">
+    <div id="intro-ambient-glow"></div>
+    <canvas id="intro-particle-canvas"></canvas>
+    <div id="intro-shake-wrapper">
+      <div id="intro-ring-container">
+        <svg id="intro-ring-svg" viewBox="0 0 100 100">
+          <circle id="intro-ring-main"   cx="50" cy="50" r="48"/>
+          <circle id="intro-ring-dashed" cx="50" cy="50" r="52"/>
+        </svg>
+        <div id="intro-logo-wrapper">
+          <img id="intro-logo-img" src="logo.png" alt="Crickverse">
+          <div id="intro-streak"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Fixed UI (always on top) ── -->
+<button id="themeToggle" onclick="toggleTheme()">🌙</button>
+<button id="globalBackBtn" class="fixedBtn" onclick="handleBack()">← Back</button>
+<div id="spectatorBadge" class="fixedSpectatorBadge">👁️ Spectating</div>
+<button id="gameDeclareBtn" class="fixedDeclareBtn" onclick="declareMatch()">🏳️ Declare</button>
+<button id="settingsBtn" onclick="openSettingsPopup()">⚙️</button>
+<audio id="bgmAudio" loop preload="auto"></audio>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="authScreen" class="screen">
+  <div class="centerCard">
+    <div class="appLogo">🏏</div>
+    <h1>Crickverse</h1>
+    <div class="modeToggle authModeToggle">
+      <button class="modeBtn active" id="authTabLogin"    onclick="switchAuthTab('login')">Login</button>
+      <button class="modeBtn"        id="authTabRegister" onclick="switchAuthTab('register')">Register</button>
+    </div>
+    <!-- Login form -->
+    <div id="authLoginForm" class="authFormWrap">
+      <input type="text"     id="loginUsername" placeholder="Username">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btnPrimary fullWidth" onclick="doLogin()">Login →</button>
+      <p id="loginError" class="formError"></p>
+    </div>
+    <!-- Register form -->
+    <div id="authRegisterForm" class="authFormWrap authRegisterForm">
+      <input type="text"     id="regFullName"    placeholder="Full Name">
+      <input type="text"     id="regDisplayName" placeholder="Display Name (shown in-game)">
+      <input type="text"     id="regUsername"    placeholder="Username (letters/numbers/_)">
+      <input type="password" id="regPassword"    placeholder="Password (min 6 chars)">
+      <input type="text"     id="regOTP"         placeholder="OTP Code (from admin)" maxlength="8">
+      <button class="btnPrimary fullWidth" onclick="doRegister()">Create Account →</button>
+      <p id="registerError" class="formError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     HOME SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="homeScreen" class="screen">
+  <div class="homeScroll">
+
+    <!-- Profile summary -->
+    <div class="homeSummaryCard">
+      <img id="homeAvatar" class="homeAvatarImg" src="" alt="">
+      <div class="homeSummaryInfo">
+        <div class="homeSummaryNameRow">
+          <span id="homeDisplayName" class="homeName">—</span>
+          <span id="homeRankTag" class="rankTag">—</span>
+        </div>
+        <span id="homeUsername" class="homeSubName">@—</span>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="homeStatsRow">
+      <div class="homeStatPill"><span class="homeStatNum" id="hStatPlayed">—</span><span class="homeStatLbl">Played</span></div>
+      <div class="homeStatPill green"><span class="homeStatNum" id="hStatWins">—</span><span class="homeStatLbl">Wins</span></div>
+      <div class="homeStatPill red"><span class="homeStatNum" id="hStatLosses">—</span><span class="homeStatLbl">Losses</span></div>
+      <div class="homeStatPill accent"><span class="homeStatNum" id="hStatWinRate">—%</span><span class="homeStatLbl">Win Rate</span></div>
+    </div>
+
+    <!-- Play section -->
+    <div class="homeSection">
+      <p class="homeSectionTitle">🎮 Play</p>
+      <button class="btnPrimary fullWidth" onclick="goToRoomSetup()">Create Room</button>
+      <div class="homePlayRow">
+        <input type="text" id="joinRoomCodeInput" class="homePlayInput" placeholder="4-digit Room Code" maxlength="4">
+        <button class="btnPrimary" onclick="joinRoom()">Join</button>
+        <button class="btnSecondary" onclick="spectateRoom()">👁️</button>
+      </div>
+      <div id="adminHomeSection" class="adminHomeSection">
+        <button class="btnSecondary fullWidth adminPanelBtn" onclick="openAdminPanel()">🛡️ Admin Panel</button>
+      </div>
+    </div>
+
+    <!-- Team mode -->
+    <div class="homeSection">
+      <p class="homeSectionTitle">🏏 Team Mode <span class="tmBetaTag">FULL 11v11</span></p>
+      <button class="btnPrimary fullWidth tmCreateHomeBtn" onclick="tmOpenSetup('create')">Create Team Room</button>
+      <div class="homePlayRow">
+        <input type="text" id="tmHomeJoinCode" class="homePlayInput" placeholder="4-digit Team Code" maxlength="4" inputmode="numeric">
+        <button class="btnPrimary" onclick="tmQuickJoin()">Join Team</button>
+        <button class="btnSecondary" onclick="tmQuickSpectate()">👁️</button>
+      </div>
+      <p class="tmHomeHint">2 teams · 11 slots each · team matches count on your profile</p>
+    </div>
+
+    <!-- Live friends -->
+    <div class="homeSection" id="liveFriendsSection">
+      <p class="homeSectionTitle">🔴 Friends Live</p>
+      <div id="liveFriendsList"></div>
+    </div>
+
+    <!-- Recent matches -->
+    <div class="homeSection">
+      <p class="homeSectionTitle">🕐 Recent Matches</p>
+      <div id="homeRecentMatches"><p class="profileLoading">Loading...</p></div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="homeSection" id="analyticsSection">
+      <p class="homeSectionTitle">📊 Analytics</p>
+      <div class="analyticsGrid" id="analyticsGrid"></div>
+    </div>
+
+    <div class="navSpacer"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FRIENDS SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="friendsScreen" class="screen">
+  <div class="tabScroll">
+    <p class="tabTitle">Friends</p>
+    <div class="socialAddRow">
+      <input type="text" id="addFriendInput" placeholder="Enter username" maxlength="20">
+      <button class="btnPrimary" onclick="sendFriendRequest()">Add</button>
+    </div>
+    <p id="addFriendMsg" class="addFriendMsg"></p>
+    <div id="pendingSection">
+      <p class="socialSectionTitle">📬 Requests Received</p>
+      <div id="pendingList"></div>
+    </div>
+    <div id="sentSection">
+      <p class="socialSectionTitle">📤 Requests Sent</p>
+      <div id="sentList"></div>
+    </div>
+    <p class="socialSectionTitle">👥 My Friends</p>
+    <div id="friendsList"><p class="profileLoading">Loading...</p></div>
+    <div class="navSpacer"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     LEADERBOARD SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="leaderboardScreen" class="screen">
+  <div class="tabScroll">
+    <p class="tabTitle">🏆 Leaderboard</p>
+    <p class="lbHint">Min. 3 matches to qualify</p>
+    <div id="leaderboardList"><p class="profileLoading">Loading...</p></div>
+    <div class="navSpacer"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PROFILE SCREEN
+═══════════════════════════════════════════════════════════════════ -->
+<div id="profileScreen" class="screen">
+  <div class="profileScroll">
+  <div class="profileCard">
+    <div class="profileHeader">
+      <img id="profileAvatarImg" class="profileAvatarImg" src="" alt="">
+      <div class="profileInfo">
+        <h2 id="profileUsername" class="profileUsernameEl">—</h2>
+        <p id="profileDisplayName" class="profileDisplayEl">—</p>
+        <p id="profileSince" class="profileSinceEl">—</p>
+      </div>
+      <span id="profileRankTag" class="rankTag profileRankTagEl">—</span>
+    </div>
+    <div class="statsGrid">
+      <div class="statBox"><p class="statBoxNum" id="statPlayed">—</p><p class="statBoxLabel">Played</p></div>
+      <div class="statBox green"><p class="statBoxNum" id="statWins">—</p><p class="statBoxLabel">Wins</p></div>
+      <div class="statBox red"><p class="statBoxNum" id="statLosses">—</p><p class="statBoxLabel">Losses</p></div>
+      <div class="statBox amber"><p class="statBoxNum" id="statDraws">—</p><p class="statBoxLabel">Draws</p></div>
+      <div class="statBox accent"><p class="statBoxNum" id="statWinRate">—%</p><p class="statBoxLabel">Win Rate</p></div>
+      <div class="statBox"><p class="statBoxNum" id="statHighScore">—</p><p class="statBoxLabel">Best Score</p></div>
+    </div>
+    <div class="profileSection">
+      <p class="profileSectionTitle">⚙️ Favourite Mode</p>
+      <p id="statFavMode" class="profileFavMode">—</p>
+    </div>
+    <div class="profileSection">
+      <p class="profileSectionTitle">🕐 Recent Matches</p>
+      <div id="recentMatchesList"></div>
+    </div>
+    <button class="btnSecondary fullWidth profileActionBtn" id="logoutFromProfileBtn"  onclick="doLogout()">↩️ Logout</button>
+    <button class="btnSecondary fullWidth profileActionBtn" id="changePasswordBtn"     onclick="openChangePassword()">🔑 Change Password</button>
+    <button class="btnSecondary fullWidth profileActionBtn deleteAccountBtn" id="deleteAccountBtn" onclick="openDeleteAccount()">🗑️ Delete Account</button>
+    <button class="btnPrimary   fullWidth profileActionBtn" id="addFriendProfileBtn"   onclick="addFriendFromProfile()">👥 Add Friend</button>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SETTINGS SCREEN (full tab)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="settingsScreen" class="screen">
+  <div class="settingsFullCard">
+    <p class="tabTitle settingsTabTitle">⚙️ Settings</p>
+    <div class="settingsTabs">
+      <button class="sTab active" id="sTab-controls" onclick="switchSettingsTab('controls')">🎮 Controls</button>
+      <button class="sTab"        id="sTab-audio"    onclick="switchSettingsTab('audio')">🔊 Audio</button>
+    </div>
+    <div id="settingsPane-controls" class="settingsPane">
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Keyboard Mode</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Keyboard Control</span>
+          <div class="toggleTrack" id="kbToggleTrack" onclick="toggleKeyboard()"><div class="toggleThumb"></div></div>
+        </label>
+      </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Mouse / Touch</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Mouse / Touch</span>
+          <div class="toggleTrack on" id="mouseToggleTrack" onclick="toggleMouse()"><div class="toggleThumb"></div></div>
+        </label>
+      </div>
+      <div class="settingsSection" id="keybindSection">
+        <div class="settingsSectionTitle">Keybinds <span class="settingsHint">Click to rebind</span></div>
+        <div class="keybindList" id="keybindList"></div>
+        <button class="btnPrimary settingsResetBtn" onclick="resetKeybinds()">↺ Reset to Defaults</button>
+      </div>
+    </div>
+    <div id="settingsPane-audio" class="settingsPane">
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Sound Effects (SFX)</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable SFX</span>
+          <div class="toggleTrack on" id="sfxToggleTrack" onclick="toggleSFX()"><div class="toggleThumb"></div></div>
+        </label>
+        <div class="sliderRow">
+          <span class="sliderLabel">Volume</span>
+          <input type="range" min="0" max="100" value="80" id="sfxVolumeSlider" oninput="setSFXVolume(this.value)">
+          <span class="sliderVal" id="sfxVolumeVal">80</span>
+        </div>
+      </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Background Music (BGM)</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Music</span>
+          <div class="toggleTrack on" id="bgmToggleTrack" onclick="toggleBGM()"><div class="toggleThumb"></div></div>
+        </label>
+        <div class="sliderRow">
+          <span class="sliderLabel">Volume</span>
+          <input type="range" min="0" max="100" value="50" id="bgmVolumeSlider" oninput="setBGMVolume(this.value)">
+          <span class="sliderVal" id="bgmVolumeVal">50</span>
+        </div>
+      </div>
+    </div>
+    <div class="navSpacer"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     BOTTOM NAV
+═══════════════════════════════════════════════════════════════════ -->
+<nav id="bottomNav" class="bottomNav">
+  <button class="navBtn active" id="navHome"        onclick="switchTab('homeScreen','navHome')">🏠<span>Home</span></button>
+  <button class="navBtn"        id="navFriends"     onclick="switchTab('friendsScreen','navFriends');loadFriends()">👥<span>Friends</span></button>
+  <button class="navBtn"        id="navLeaderboard" onclick="switchTab('leaderboardScreen','navLeaderboard');loadLeaderboard()">🏆<span>Top 10</span></button>
+  <button class="navBtn"        id="navProfile"     onclick="switchTab('profileScreen','navProfile');openOwnProfile()">👤<span>Profile</span></button>
+  <button class="navBtn"        id="navSettings"    onclick="switchTab('settingsScreen','navSettings')">⚙️<span>Settings</span></button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     GAME FLOW SCREENS
+═══════════════════════════════════════════════════════════════════ -->
+
+<!-- Room Setup -->
+<div id="roomSetupScreen" class="screen">
+  <div class="centerCard">
+    <h2>Create Room</h2>
+    <div class="modeToggle">
+      <button id="limitedBtn"   class="modeBtn active" onclick="setGameMode('limited')">Limited</button>
+      <button id="unlimitedBtn" class="modeBtn"        onclick="setGameMode('unlimited')">Unlimited</button>
+    </div>
+    <input type="number" id="oversInput"   placeholder="Overs"   min="1">
+    <input type="number" id="wicketsInput" placeholder="Wickets" min="1">
+    <button class="btnPrimary fullWidth" onclick="createRoom()">Create Room →</button>
+  </div>
+</div>
+
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobbyCard">
+    <h2 class="lobbyH2">Match Lobby</h2>
+    <div class="roomCodeBox">
+      Room Code: <span id="lobbyRoomCode"></span>
+      <button class="btnSmall" onclick="copyRoomCode()">Copy</button>
+    </div>
+    <div class="teamRow">
+      <div class="teamBox">
+        <p class="teamLabel" id="teamALabel">Player 1</p>
+        <p class="teamName"  id="teamA">Waiting...</p>
+      </div>
+      <div class="vsDot">VS</div>
+      <div class="teamBox">
+        <p class="teamLabel">Player 2</p>
+        <p class="teamName"  id="teamB">Waiting...</p>
+      </div>
+    </div>
+    <div class="spectatorInfo">👁️ <span id="spectatorCount">0</span> watching</div>
+    <div id="lobbyInviteSection">
+      <p class="socialSectionTitle lobbyInviteTitle">📨 Invite Friends</p>
+      <div id="lobbyInviteList"></div>
+    </div>
+    <button class="btnPrimary   fullWidth" id="startMatchBtn" onclick="startMatch()">Start Match</button>
+    <button class="btnSecondary fullWidth" id="readyBtn"      onclick="sendReady()">✋ Ready to Play!</button>
+  </div>
+</div>
+
+<!-- Toss -->
+<div id="tossScreen" class="screen">
+  <div class="centerCard">
+    <h2>Toss</h2>
+    <div class="coinContainer">
+      <div class="coin" id="coin">
+        <div class="coin-side heads">H</div>
+        <div class="coin-side tails">T</div>
+      </div>
+    </div>
+    <p id="tossMessage" class="tossMessage">Make your call!</p>
+    <div id="tossButtons" class="btnRow">
+      <button class="btnPrimary"   onclick="sendToss('head')">Heads</button>
+      <button class="btnPrimary"   onclick="sendToss('tail')">Tails</button>
+      <button class="btnSecondary" onclick="sendToss('pass')">Pass</button>
+    </div>
+    <p id="tossWaiting" class="waitingText">Waiting for opponent's call...</p>
+  </div>
+</div>
+
+<!-- Decision -->
+<div id="decisionScreen" class="screen">
+  <div class="centerCard">
+    <div class="appLogo">🏏</div>
+    <h2>Choose</h2>
+    <p id="decisionWaiting" class="waitingText"></p>
+    <div id="decisionButtons" class="btnRow">
+      <button class="btnPrimary"   onclick="sendDecision('bat')">🏏 Bat</button>
+      <button class="btnSecondary" onclick="sendDecision('bowl')">🎳 Bowl</button>
+    </div>
+  </div>
+</div>
+
+<!-- Match Preview -->
+<div id="matchPreviewScreen" class="screen">
+  <div class="breakCard">
+    <div class="breakBadge">🏏 Match Preview</div>
+    <div class="breakInnings1">
+      <p class="breakLabel">Batting First</p>
+      <p class="breakTeamName" id="previewBattingName">—</p>
+    </div>
+    <div class="breakArrow">VS</div>
+    <div class="breakInnings2">
+      <p class="breakLabel">Bowling First</p>
+      <p class="breakTeamName" id="previewBowlingName">—</p>
+    </div>
+    <div class="matchInfoGrid">
+      <div class="matchInfoItem"><p class="matchInfoLabel">Mode</p>   <p class="matchInfoValue" id="previewMode">—</p></div>
+      <div class="matchInfoItem"><p class="matchInfoLabel">Overs</p>  <p class="matchInfoValue" id="previewOvers">—</p></div>
+      <div class="matchInfoItem"><p class="matchInfoLabel">Wickets</p><p class="matchInfoValue" id="previewWickets">—</p></div>
+    </div>
+    <div class="breakCountdown">Starting in <span id="previewCountdownNum">5</span>s</div>
+    <button class="btnPrimary fullWidth" onclick="skipPreview()">Start Match →</button>
+  </div>
+</div>
+
+<!-- Game Screen -->
+<div id="gameScreen" class="screen gameScreenLayout">
+  <div id="scoreboardCard">
+    <div class="scoreRow1">
+      <span id="modeDisplay">Single • Limited</span>
+      <span id="inningsDisplay">Innings: 1</span>
+    </div>
+    <!-- PATCHED: bowler left, batsman+stats grouped right -->
+    <div class="scoreRow2">
+      <span id="bowlingName">Bowler: —</span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <span id="battingName">Batsman: —</span>
+      </span>
+    </div>
+    <div class="scoreRow3"><span id="mainScore">0 - 0</span></div>
+    <div class="scoreRow4">
+      <div class="scoreItem">Over: <span id="overDisplay">0.0</span></div>
+      <div class="scoreItem">Target: <span id="targetDisplay">-</span></div>
+      <div class="scoreItem">Balls Left: <span id="ballsLeftDisplay">—</span></div>
+      <div class="scoreItem">Runs Left: <span id="runsLeftDisplay">—</span></div>
+      <div class="scoreItem">RRR: <span id="rrrDisplay">—</span></div>
+    </div>
+    <div class="scoreRow5" id="ballHistoryRow">
+      <div class="ballBox">-</div><div class="ballBox">-</div><div class="ballBox">-</div>
+      <div class="ballBox">-</div><div class="ballBox">-</div><div class="ballBox">-</div>
+    </div>
+    <div class="scoreRow6">
+      <span class="liveSpectators">👁️ <span id="liveSpectatorCount">0</span> watching</span>
+    </div>
+  </div>
+
+  <div class="gameControls">
+    <p id="ballMessage" class="ballMessage"></p>
+
+    <div id="lockStatusBar" class="lockStatusBar">
+      <div class="lockPlayer" id="lockStatusA"><span id="lockNameA">Player A</span><span class="lockState" id="lockStateA">Waiting ⏳</span></div>
+      <div class="lockDivider"></div>
+      <div class="lockPlayer" id="lockStatusB"><span id="lockNameB">Player B</span><span class="lockState" id="lockStateB">Waiting ⏳</span></div>
+    </div>
+
+    <p class="controlLabel">Click fingers to open them</p>
+
+    <div class="handContainer" id="handContainer">
+      <div class="handRig" id="handRig">
+        <img class="handLayer base"  src="hands/base-hand.png" alt="">
+        <img class="handLayer" id="layer-pinky"  src="hands/pinky.png"  alt="">
+        <img class="handLayer" id="layer-ring"   src="hands/ring.png"   alt="">
+        <img class="handLayer" id="layer-middle" src="hands/middle.png" alt="">
+        <img class="handLayer" id="layer-index"  src="hands/index.png"  alt="">
+        <img class="handLayer" id="layer-thumb-dark"  src="hands/thumb_1.png" alt="">
+        <img class="handLayer" id="layer-thumb-light" src="hands/thumb_2.png" alt="">
+        <div class="hitbox" id="hit-thumb"  onclick="toggleHandFinger('thumb')"  style="left:19.70%;top:24.01%;width:17.05%;height:50.00%;"></div>
+        <div class="hitbox" id="hit-index"  onclick="toggleHandFinger('index')"  style="left:38.25%;top:0.33%;width:11.09%;height:54.64%;"></div>
+        <div class="hitbox" id="hit-middle" onclick="toggleHandFinger('middle')" style="left:50.00%;top:0.50%;width:9.93%;height:54.64%;"></div>
+        <div class="hitbox" id="hit-ring"   onclick="toggleHandFinger('ring')"   style="left:60.76%;top:0.33%;width:7.95%;height:54.64%;"></div>
+        <div class="hitbox" id="hit-pinky"  onclick="toggleHandFinger('pinky')"  style="left:69.21%;top:13.25%;width:8.61%;height:40.73%;"></div>
+      </div>
+    </div>
+
+    <p class="selectedLabel">Selected: <span id="selectedDisplay">None</span></p>
+    <button class="btnLock" onclick="lockHand()">🔒 LOCK HAND</button>
+  </div>
+</div>
+
+<!-- Innings Break -->
+<div id="inningsBreakScreen" class="screen">
+  <div class="breakCard">
+    <div class="breakBadge">⚡ Innings Break</div>
+    <div class="breakInnings1">
+      <p class="breakLabel">1st Innings</p>
+      <p class="breakTeamName" id="breakBattedName">—</p>
+      <p class="breakScore" id="breakScore1">0 - 0</p>
+    </div>
+    <div class="breakArrow">▼</div>
+    <div class="breakTarget">
+      <p class="breakLabel">Target</p>
+      <p class="breakTargetNum" id="breakTarget">—</p>
+    </div>
+    <div class="breakInnings2">
+      <p class="breakLabel">Now Batting</p>
+      <p class="breakTeamName" id="breakBattingNext">—</p>
+      <p class="breakSubtext"  id="breakModeInfo">—</p>
+    </div>
+    <div class="breakCountdown">Starting in <span id="breakCountdownNum">5</span>s</div>
+    <button class="btnPrimary" onclick="skipBreak()">Start Innings 2 →</button>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="resultScreen" class="screen">
+  <div class="centerCard resultCard">
+    <div class="appLogo" id="resultEmoji">🏆</div>
+    <h2 id="resultTitle">Match Over!</h2>
+    <div id="matchSummary" class="matchSummary">
+      <p id="winnerText"   class="winnerText">—</p>
+      <p id="marginText"   class="marginText"></p>
+      <p id="declaredText" class="declaredText"></p>
+    </div>
+    <div id="matchStats" class="matchStats">
+      <div class="statRow"><span class="statLabel" id="team1Name">Team A:</span><span class="statValue" id="team1Score">—</span></div>
+      <div class="statRow"><span class="statLabel" id="team2Name">Team B:</span><span class="statValue" id="team2Score">—</span></div>
+      <div class="statRow"><span class="statLabel">Balls Remaining:</span><span class="statValue" id="ballsRemaining">—</span></div>
+    </div>
+    <div id="rematchSection" class="rematchSection">
+      <p id="rematchStatus" class="rematchStatus"></p>
+      <button class="btnPrimary fullWidth" id="rematchBtn" onclick="requestRematch()">🔄 Request Rematch</button>
+      <div id="rematchReceiverBtns" class="rematchReceiverBtns">
+        <button class="btnPrimary   fullWidth" onclick="acceptRematch()">✅ Accept Rematch</button>
+        <button class="btnSecondary fullWidth" onclick="declineRematch()">❌ Decline</button>
+      </div>
+    </div>
+    <div id="friendSection" class="friendSection">
+      <p id="friendStatus" class="friendStatus"></p>
+      <button class="btnSecondary fullWidth" id="friendAddBtn" onclick="requestFriend()">👥 Add Friend</button>
+      <div id="friendReceiverBtns" class="friendReceiverBtns">
+        <button class="btnPrimary   fullWidth" onclick="acceptFriend()">✅ Accept Friend</button>
+        <button class="btnSecondary fullWidth" onclick="declineFriend()">❌ Decline</button>
+      </div>
+    </div>
+    <button class="btnSecondary fullWidth" id="exitMatchBtn" onclick="exitMatch()">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     POPUPS
+═══════════════════════════════════════════════════════════════════ -->
+
+<!-- Opponent Left -->
+<div id="opponentLeftPopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">😔</p><h3>Opponent Left</h3>
+    <p id="opponentLeftMsg" class="popupMsg">Your opponent has left.</p>
+    <button class="btnPrimary  fullWidth" onclick="closePopup('opponentLeftPopup')">Keep Waiting</button>
+    <button class="btnSecondary fullWidth opponentLeftBackBtn" onclick="exitMatch()">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- Leave popup -->
+<div id="leavePopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">🚪</p><h3>Leave?</h3>
+    <p class="popupMsg" id="leavePopupMsg">Are you sure?</p>
+    <div class="btnRow">
+      <button class="btnPrimary"   onclick="confirmLeave()">Yes, Leave</button>
+      <button class="btnSecondary" onclick="cancelLeavePopup()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- In-match leave (with declare option) -->
+<div id="inMatchLeavePopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">🏏</p><h3>Leave Match?</h3>
+    <p class="popupMsg">Choose what you'd like to do:</p>
+    <button class="btnPrimary   fullWidth" onclick="confirmLeaveWithConfirm()">🚪 Leave</button>
+    <button class="btnSecondary fullWidth" id="inMatchDeclareBtn" onclick="showDeclareFromMenu()">🏳️ Declare Match</button>
+    <button class="btnSecondary fullWidth inMatchCancelBtn" onclick="closePopup('inMatchLeavePopup')">Cancel</button>
+  </div>
+</div>
+
+<!-- Spectator leave -->
+<div id="spectatorLeavePopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">👁️</p><h3>Stop Watching?</h3>
+    <p class="popupMsg">You'll leave spectator view.</p>
+    <div class="btnRow">
+      <button class="btnPrimary"   onclick="confirmLeave()">Yes, Leave</button>
+      <button class="btnSecondary" onclick="closePopup('spectatorLeavePopup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Declare confirm -->
+<div id="declarePopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">🏳️</p><h3>Declare Match?</h3>
+    <p class="popupMsg">This ends the match immediately on current scores.</p>
+    <div class="btnRow">
+      <button class="btnPrimary"   onclick="confirmDeclare()">Yes, Declare</button>
+      <button class="btnSecondary" onclick="cancelDeclare()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- In-game Settings popup -->
+<div id="settingsPopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard popupCardLarge">
+    <p class="popupEmoji">⚙️</p><h3>Settings</h3>
+    <div class="settingsTabs popupSettingsTabs">
+      <button class="sTab active" id="spTab-controls" onclick="switchSettingsPopupTab('controls')">🎮 Controls</button>
+      <button class="sTab"        id="spTab-audio"    onclick="switchSettingsPopupTab('audio')">🔊 Audio</button>
+    </div>
+    <div id="settingsPopupPane-controls" class="popupSettingsPane">
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Keyboard Mode</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Keyboard Control</span>
+          <div class="toggleTrack" id="spKbToggleTrack" onclick="toggleKeyboard();syncSettingsPopupUI()"><div class="toggleThumb"></div></div>
+        </label>
+      </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">Mouse / Touch</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Mouse / Touch</span>
+          <div class="toggleTrack on" id="spMouseToggleTrack" onclick="toggleMouse();syncSettingsPopupUI()"><div class="toggleThumb"></div></div>
+        </label>
+      </div>
+    </div>
+    <div id="settingsPopupPane-audio" class="popupAudioPane">
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">SFX</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable SFX</span>
+          <div class="toggleTrack on" id="spSfxToggleTrack" onclick="toggleSFX();syncSettingsPopupUI()"><div class="toggleThumb"></div></div>
+        </label>
+        <div class="sliderRow">
+          <span class="sliderLabel">Volume</span>
+          <input type="range" min="0" max="100" value="80" id="spSfxVolumeSlider" oninput="setSFXVolume(this.value);syncSettingsPopupUI()">
+          <span class="sliderVal" id="spSfxVolumeVal">80</span>
+        </div>
+      </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">BGM</div>
+        <label class="toggleRow">
+          <span class="toggleLabel">Enable Music</span>
+          <div class="toggleTrack on" id="spBgmToggleTrack" onclick="toggleBGM();syncSettingsPopupUI()"><div class="toggleThumb"></div></div>
+        </label>
+        <div class="sliderRow">
+          <span class="sliderLabel">Volume</span>
+          <input type="range" min="0" max="100" value="50" id="spBgmVolumeSlider" oninput="setBGMVolume(this.value);syncSettingsPopupUI()">
+          <span class="sliderVal" id="spBgmVolumeVal">50</span>
+        </div>
+      </div>
+    </div>
+    <button class="btnSecondary fullWidth popupCloseBtn" onclick="closePopup('settingsPopup')">Close</button>
+  </div>
+</div>
+
+<!-- Keybind capture overlay -->
+<div id="keybindCapture" class="popupOverlay" style="display:none;" onclick="stopListening()">
+  <div class="popupCard" onclick="event.stopPropagation()">
+    <p class="popupEmoji">⌨️</p><h3>Press any key</h3>
+    <p class="popupMsg">Rebinding: <strong id="keybindTarget">—</strong></p>
+    <p class="popupMsg popupKeybindHint">Press Escape to cancel</p>
+  </div>
+</div>
+
+<!-- Change Password -->
+<div id="changePasswordPopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">🔑</p><h3>Change Password</h3>
+    <div class="authFormWrap">
+      <input type="password" id="cpCurrent" placeholder="Current password">
+      <input type="password" id="cpNew"     placeholder="New password (min 6 chars)">
+      <input type="password" id="cpConfirm" placeholder="Confirm new password">
+    </div>
+    <p id="cpError"   class="formError"></p>
+    <p id="cpSuccess" class="popupCpSuccess"></p>
+    <button class="btnPrimary   fullWidth" onclick="doChangePassword()">Update Password</button>
+    <button class="btnSecondary fullWidth" onclick="closePopup('changePasswordPopup')">Cancel</button>
+  </div>
+</div>
+
+<!-- Team mode (dynamic) -->
+<div id="teamScreen" class="screen teamScreen"></div>
+
+<!-- Delete Account -->
+<div id="deleteAccountPopup" class="popupOverlay" style="display:none;">
+  <div class="popupCard">
+    <p class="popupEmoji">🗑️</p><h3>Delete Account</h3>
+    <p class="popupMsg popupDeleteMsg">This is permanent. All data will be lost.</p>
+    <input type="password" id="deletePassword" placeholder="Enter your password to confirm">
+    <p id="deleteError" class="formError"></p>
+    <button class="btnPrimary fullWidth popupDeleteBtn" onclick="doDeleteAccount()">Yes, Delete My Account</button>
+    <button class="btnSecondary fullWidth" onclick="closePopup('deleteAccountPopup')">Cancel</button>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel" class="popupOverlay" style="display:none;">
+  <div class="popupCard popupCardAdmin">
+    <p class="popupEmoji">🛡️</p><h3>Admin Panel</h3>
+    <div class="modeToggle adminModeToggle">
+      <button class="modeBtn active" id="adminTabOtp"   onclick="switchAdminTab('otp')">🔑 OTPs</button>
+      <button class="modeBtn"        id="adminTabUsers" onclick="switchAdminTab('users')">👥 Users</button>
+    </div>
+    <div id="adminPaneOtp" class="adminOtpPane">
+      <p class="popupMsg">Generate OTP codes for new registrations.</p>
+      <div class="adminOtpRow">
+        <input type="number" id="otpCount" class="adminOtpCountInput" value="1" min="1" max="10">
+        <button class="btnPrimary adminOtpGenBtn" onclick="generateOTPs()">Generate OTPs</button>
+      </div>
+      <div id="otpResult" class="adminOtpResult"></div>
+    </div>
+    <div id="adminPaneUsers" class="adminUsersPane">
+      <div id="adminUserList"><p class="profileLoading">Loading...</p></div>
+    </div>
+    <button class="btnSecondary fullWidth adminCloseBtn" onclick="closePopup('adminPanel')">Close</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script src="team.js"></script>
+</body>
+</html>
